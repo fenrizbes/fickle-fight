@@ -12,11 +12,12 @@ import {
 
 class Battle {
     constructor(onChange) {
-        this.onChange = onChange;
-        this.matrix   = [];
-        this.timer    = null;
-        this.turn     = 0;
-        this.armies   = {
+        this.onChange  = onChange;
+        this.matrix    = [];
+        this.processed = {};
+        this.timer     = null;
+        this.turn      = 0;
+        this.armies    = {
             [BLUE_ARMY]: ARMY_SIZE,
             [RED_ARMY]:  ARMY_SIZE
         };
@@ -93,6 +94,7 @@ class Battle {
 
     _turn() {
         this.turn++;
+        this.processed = {};
 
         const steps = FIELD_SIZE / 2;
 
@@ -120,6 +122,10 @@ class Battle {
     }
 
     _action(line, column) {
+        if ('undefined' !== typeof this.processed['l' + line + 'c' + column]) {
+            return;
+        }
+
         const army = this.matrix[line][column];
 
         if (NO_ARMY === army) {
@@ -230,8 +236,7 @@ class Battle {
             }
 
             if (NO_ARMY === this.matrix[targetLine][thisColumn]) {
-                this.matrix[targetLine][thisColumn] = this.matrix[thisLine][thisColumn];
-                this.matrix[thisLine][thisColumn]   = NO_ARMY;
+                this._finishMove(thisLine, thisColumn, targetLine, thisColumn);
 
                 return;
             }
@@ -247,10 +252,16 @@ class Battle {
             }
 
             if (NO_ARMY === this.matrix[thisLine][targetColumn]) {
-                this.matrix[thisLine][targetColumn] = this.matrix[thisLine][thisColumn];
-                this.matrix[thisLine][thisColumn]   = NO_ARMY;
+                this._finishMove(thisLine, thisColumn, thisLine, targetColumn);
             }
         }
+    }
+
+    _finishMove(thisLine, thisColumn, targetLine, targetColumn) {
+        this.matrix[targetLine][targetColumn] = this.matrix[thisLine][thisColumn];
+        this.matrix[thisLine][thisColumn]     = NO_ARMY;
+
+        this.processed['l' + targetLine + 'c' + targetColumn] = true;
     }
 
     _chance(odd) {
